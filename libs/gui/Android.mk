@@ -36,7 +36,6 @@ LOCAL_SHARED_LIBRARIES := \
 	libsync \
 	libui \
 	libutils \
-	libhardware \
 	liblog
 
 # Executed only on QCOM BSPs
@@ -68,7 +67,7 @@ ifeq ($(TARGET_QCOM_DISPLAY_VARIANT), legacy)
 	LOCAL_CFLAGS += -DDONT_USE_FENCE_SYNC
 endif
 ifeq ($(TARGET_TOROPLUS_RADIO), true)
-        LOCAL_CFLAGS += -DTOROPLUS_RADIO
+	LOCAL_CFLAGS += -DTOROPLUS_RADIO
 endif
 
 include $(BUILD_SHARED_LIBRARY)
