@@ -27,8 +27,12 @@
 // ---------------------------------------------------------------------------
 namespace android {
 
-template <typename T> class Flattenable;
 template <typename T> class LightFlattenable;
+#ifdef STE_HARDWARE
+class Flattenable;
+#else
+template <typename T> class Flattenable;
+#endif
 class IBinder;
 class IPCThreadState;
 class ProcessState;
@@ -44,7 +48,7 @@ public:
 
                         Parcel();
                         ~Parcel();
-    
+
     const uint8_t*      data() const;
     size_t              dataSize() const;
     size_t              dataAvail() const;
@@ -54,7 +58,7 @@ public:
     status_t            setDataSize(size_t size);
     void                setDataPosition(size_t pos) const;
     status_t            setDataCapacity(size_t size);
-    
+
     status_t            setData(const uint8_t* buffer, size_t len);
 
     status_t            appendFrom(const Parcel *parcel,
@@ -83,10 +87,10 @@ public:
 
     const size_t*       objects() const;
     size_t              objectsCount() const;
-    
+
     status_t            errorCheck() const;
     void                setError(status_t err);
-    
+
     status_t            write(const void* data, size_t len);
     void*               writeInplace(size_t len);
     status_t            writeUnpadded(const void* data, size_t len);
@@ -102,9 +106,13 @@ public:
     status_t            writeStrongBinder(const sp<IBinder>& val);
     status_t            writeWeakBinder(const wp<IBinder>& val);
     status_t            writeInt32Array(size_t len, const int32_t *val);
-
+#ifdef STE_HARDWARE
+    status_t            write(const Flattenable& val);
+#else
     template<typename T>
     status_t            write(const Flattenable<T>& val);
+#endif
+
 
     template<typename T>
     status_t            write(const LightFlattenable<T>& val);
@@ -112,15 +120,15 @@ public:
 
     // Place a native_handle into the parcel (the native_handle's file-
     // descriptors are dup'ed, so it is safe to delete the native_handle
-    // when this function returns). 
+    // when this function returns).
     // Doesn't take ownership of the native_handle.
     status_t            writeNativeHandle(const native_handle* handle);
-    
+
     // Place a file descriptor into the parcel.  The given fd must remain
     // valid for the lifetime of the parcel.
     // The Parcel does not take ownership of the given fd unless you ask it to.
     status_t            writeFileDescriptor(int fd, bool takeOwnership = false);
-    
+
     // Place a file descriptor into the parcel.  A dup of the fd is made, which
     // will be closed once the parcel is destroyed.
     status_t            writeDupFileDescriptor(int fd);
@@ -139,7 +147,7 @@ public:
     status_t            writeNoException();
 
     void                remove(size_t start, size_t amt);
-    
+
     status_t            read(void* outData, size_t len) const;
     const void*         readInplace(size_t len) const;
     int32_t             readInt32() const;
@@ -159,9 +167,12 @@ public:
     const char16_t*     readString16Inplace(size_t* outLen) const;
     sp<IBinder>         readStrongBinder() const;
     wp<IBinder>         readWeakBinder() const;
-
+#ifdef STE_HARDWARE
+    status_t            read(Flattenable& val) const;
+#else
     template<typename T>
     status_t            read(Flattenable<T>& val) const;
+#endif
 
     template<typename T>
     status_t            read(LightFlattenable<T>& val) const;
@@ -175,11 +186,11 @@ public:
 
     // Retrieve native_handle from the parcel. This returns a copy of the
     // parcel's native_handle (the caller takes ownership). The caller
-    // must free the native_handle with native_handle_close() and 
+    // must free the native_handle with native_handle_close() and
     // native_handle_delete().
     native_handle*     readNativeHandle() const;
 
-    
+
     // Retrieve a file descriptor from the parcel.  This returns the raw fd
     // in the parcel, which you do not own -- use dup() to get your own copy.
     int                 readFileDescriptor() const;
@@ -192,12 +203,12 @@ public:
 
     // Explicitly close all file descriptors in the parcel.
     void                closeFileDescriptors();
-    
+
     typedef void        (*release_func)(Parcel* parcel,
                                         const uint8_t* data, size_t dataSize,
                                         const size_t* objects, size_t objectsSize,
                                         void* cookie);
-                        
+
     const uint8_t*      ipcData() const;
     size_t              ipcDataSize() const;
     const size_t*       ipcObjects() const;
@@ -205,13 +216,13 @@ public:
     void                ipcSetDataReference(const uint8_t* data, size_t dataSize,
                                             const size_t* objects, size_t objectsCount,
                                             release_func relFunc, void* relCookie);
-    
+
     void                print(TextOutput& to, uint32_t flags = 0) const;
 
 private:
                         Parcel(const Parcel& o);
     Parcel&             operator=(const Parcel& o);
-    
+
     status_t            finishWrite(size_t len);
     void                releaseObjects();
     void                acquireObjects();
@@ -221,7 +232,7 @@ private:
     void                freeDataNoInit();
     void                initState();
     void                scanForFds() const;
-                        
+
     template<class T>
     status_t            readAligned(T *pArg) const;
 
@@ -243,7 +254,7 @@ private:
     mutable bool        mFdsKnown;
     mutable bool        mHasFds;
     bool                mAllowFds;
-    
+
     release_func        mOwner;
     void*               mOwnerCookie;
 
@@ -274,11 +285,18 @@ private:
         virtual status_t unflatten(void const* buffer, size_t size, int const* fds, size_t count) = 0;
     };
 
+#ifndef STE_HARDWARE
     template<typename T>
+#endif
     class FlattenableHelper : public FlattenableHelperInterface {
         friend class Parcel;
+#ifdef STE_HARDWARE
+        const Flattenable& val;
+        explicit FlattenableHelper(const Flattenable& val) : val(val) { }
+#else
         const Flattenable<T>& val;
         explicit FlattenableHelper(const Flattenable<T>& val) : val(val) { }
+#endif
 
     public:
         virtual size_t getFlattenedSize() const {
@@ -291,7 +309,11 @@ private:
             return val.flatten(buffer, size, fds, count);
         }
         virtual status_t unflatten(void const* buffer, size_t size, int const* fds, size_t count) {
+#ifdef STE_HARDWARE
+            return const_cast<Flattenable&>(val).unflatten(buffer, size, fds, count);
+#else
             return const_cast<Flattenable<T>&>(val).unflatten(buffer, size, fds, count);
+#endif
         }
     };
     status_t write(const FlattenableHelperInterface& val);
@@ -313,11 +335,13 @@ public:
 
 // ---------------------------------------------------------------------------
 
+#ifndef STE_HARDWARE
 template<typename T>
 status_t Parcel::write(const Flattenable<T>& val) {
     const FlattenableHelper<T> helper(val);
     return write(helper);
 }
+#endif
 
 template<typename T>
 status_t Parcel::write(const LightFlattenable<T>& val) {
@@ -337,11 +361,13 @@ status_t Parcel::write(const LightFlattenable<T>& val) {
     return NO_ERROR;
 }
 
+#ifndef STE_HARDWARE
 template<typename T>
 status_t Parcel::read(Flattenable<T>& val) const {
     FlattenableHelper<T> helper(val);
     return read(helper);
 }
+#endif
 
 template<typename T>
 status_t Parcel::read(LightFlattenable<T>& val) const {
