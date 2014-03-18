@@ -29,7 +29,7 @@
 
 #include <gui/Surface.h>
 
-#if defined(EGL_NEEDS_FNW) && defined(STE_HARDWARE)
+#if defined(EGL_NEEDS_FNW) || defined(STE_HARDWARE)
 #include <ui/FramebufferNativeWindow.h>
 #endif
 
@@ -79,12 +79,15 @@ DisplayDevice::DisplayDevice(
       mOrientation()
 {
 
-#if !defined(EGL_NEEDS_FNW) && !defined(STE_HARDWARE)
-    mNativeWindow = new Surface(mDisplaySurface->getIGraphicBufferProducer());
+#ifdef STE_HARDWARE
     ANativeWindow* const window = new FramebufferNativeWindow();
 #else
     mNativeWindow = new Surface(producer, false);
+#ifndef EGL_NEEDS_FNW
     ANativeWindow* const window = mNativeWindow.get();
+#else
+    ANativeWindow* const window = new FramebufferNativeWindow();
+#endif
 #endif
 
     int format;
