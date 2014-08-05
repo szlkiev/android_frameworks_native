@@ -88,6 +88,11 @@ enum {
     ACONFIGURATION_UI_MODE_NIGHT_NO = 0x1,
     ACONFIGURATION_UI_MODE_NIGHT_YES = 0x2,
 
+    ACONFIGURATION_UI_PAC_ANY = 0x0000,
+    ACONFIGURATION_UI_PAC_NORMAL = 0x0001,
+    ACONFIGURATION_UI_PAC_AOSP = 0x0002,
+    ACONFIGURATION_UI_PAC_ON = 0x0003,
+
     ACONFIGURATION_SCREEN_WIDTH_DP_ANY = 0x0000,
 
     ACONFIGURATION_SCREEN_HEIGHT_DP_ANY = 0x0000,
@@ -110,6 +115,7 @@ enum {
     ACONFIGURATION_SCREEN_SIZE = 0x0200,
     ACONFIGURATION_VERSION = 0x0400,
     ACONFIGURATION_SCREEN_LAYOUT = 0x0800,
+    ACONFIGURATION_UI_PAC = 0x0900,
     ACONFIGURATION_UI_MODE = 0x1000,
     ACONFIGURATION_SMALLEST_SCREEN_SIZE = 0x2000,
     ACONFIGURATION_LAYOUTDIR = 0x4000,
@@ -304,6 +310,16 @@ int32_t AConfiguration_getUiModeNight(AConfiguration* config);
  * Set the current UI mode night in the configuration.
  */
 void AConfiguration_setUiModeNight(AConfiguration* config, int32_t uiModeNight);
+
+/**
+ * Return the current ACONFIGURATION_UI_PAC_* set in the configuration.
+ */
+int32_t AConfiguration_getUiPac(AConfiguration* config);
+
+/**
+ * Set the current PAC UI in the configuration.
+ */
+void AConfiguration_setUiPac(AConfiguration* config, int32_t uiPac);
 
 /**
  * Return the current configuration screen width in dp units, or
